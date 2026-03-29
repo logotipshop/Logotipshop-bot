@@ -1,0 +1,67 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.error import BadRequest
+
+# Ma'lumotlar
+BOT_TOKEN = "8776187529:AAH_O8V4wqp4qPy9uuDdPYCMpMMdmSWnxAE"
+ADMIN_USERNAME = "@logotipshop10"
+ADMIN_PHONE = "+998507558931"
+CHANNEL_USERNAME = "@logotipshop100"
+
+# /start komandasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Kanalga obuna bo‘lish tugmasi
+    keyboard = [
+        [InlineKeyboardButton("Kanalga obuna bo‘lish", url=f"https://t.me/{CHANNEL_USERNAME.strip('@')}")],
+        [InlineKeyboardButton("✅ Obuna bo‘ldim", callback_data="check_sub")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        f"Assalomu alaykum, {update.effective_user.first_name}! 😊\n\n"
+        f"Botdan foydalanish uchun avval kanalimizga obuna bo‘ling:", 
+        reply_markup=reply_markup
+    )
+
+# Tugmalar callback funksiyasi
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+
+    if query.data == "check_sub":
+        try:
+            # Kanal a'zoligini tekshirish
+            member = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
+            if member.status in ["member", "administrator", "creator"]:
+                keyboard = [
+                    [InlineKeyboardButton("🎨 Buyurtma berish", callback_data='buyurtma')],
+                    [InlineKeyboardButton("👨‍💻 Admin bilan bog‘lanish", callback_data='admin')]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.edit_message_text("Rahmat! Siz kanalga obuna bo‘lgansiz. Tanlang:", reply_markup=reply_markup)
+            else:
+                await query.answer("Siz hali kanalga a'zo emassiz!", show_alert=True)
+        except Exception:
+            await query.edit_message_text("Xatolik yuz berdi. Bot kanalda admin ekanligini tekshiring.")
+
+    elif query.data == "buyurtma":
+        await query.edit_message_text(
+            f"🚀 **Yangi buyurtma berish:**\n\n"
+            f"Admin: {ADMIN_USERNAME}\n"
+            f"Telefon: {ADMIN_PHONE}\n\n"
+            f"Biz bilan bog'laning, sifatli logotip tayyorlab beramiz!"
+        )
+    elif query.data == "admin":
+        await query.edit_message_text(
+            f"👨‍💻 **Admin ma'lumotlari:**\n\n"
+            f"Telegram: {ADMIN_USERNAME}\n"
+            f"Telefon: {ADMIN_PHONE}"
+        )
+
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
+    print("Logotipshop boti ishga tushdi...")
+    app.run_polling()
+    
